@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100dvh;
+  width: 100dvw;
+  background-color: var(--color-gray-900);
+  color: var(--color-white);
+}
+
+svg {
+  height: 1em;
+  width: 1em;
+}
+
+@font-face {
+  font-family: Dicier;
+  src: url("/fonts/Dicier-Flat-Dark.woff2");
+}
+
+[data-dice] {
+  font-family: Dicier, sans-serif;
+  font-feature-settings: "liga" 1, "kern" 1, "calt" 1, "dlig" 1;
+  font-style: normal;
+}
+
+[data-dice]::after {
+  content: attr(data-dice);
+}
+
+.scroller::-webkit-scrollbar {
+  opacity: var(--scroller-opacity);
+  width: 10px;
+}
+
+.scroller::-webkit-scrollbar-track {
+  opacity: var(--scroller-opacity);
+  background-color: var(--color-gray-800);
+}
+
+.scroller::-webkit-scrollbar-thumb {
+  opacity: var(--scroller-opacity);
+  border-radius: 8px;
+  background-color: var(--color-gray-700);
+}
