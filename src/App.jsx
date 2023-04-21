@@ -7,90 +7,48 @@ import {
 import cls from "classnames";
 import { createContext, useEffect, useState, useContext, useRef } from "react";
 
-const GlobalStateContext = createContext();
-
-function useGlobalState() {
-  return useContext(GlobalStateContext);
-}
-
-function useLocalState(key) {
-  const [state, setState] = useState(() => {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
-  });
-  useEffect(() => {
-    if (state) localStorage.setItem(key, JSON.stringify(state));
-  }, [state, key]);
-
-  return [
-    state,
-    setState,
-    () => {
-      localStorage.removeItem(key);
-      setState(null);
-    },
-  ];
-}
-
-function GlobalStateProvider({ children }) {
-  const [character, setCharacter, clearCharacter] = useLocalState("character");
-  const ctx = { character, setCharacter, clearCharacter };
-
-  return (
-    <GlobalStateContext.Provider value={ctx}>
-      {children}
-    </GlobalStateContext.Provider>
-  );
-}
-
-function Button({ className, icon = null, children, ...props }) {
-  return (
-    <button
-      className={cls(
-        "text-white p-2 rounded flex items-center justify-center gap-2 2xl:text-2xl active:brightness-75  disabled:pointer-events-none",
-        className
-      )}
-      {...props}
-    >
-      {icon}
-      {children ? (
-        <span className={cls("md:inline leading-none", { hidden: icon })}>
-          {children}
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
-function Header() {
-  const { character, clearCharacter } = useGlobalState();
-  return (
-    <header className="bg-gray-700 px-8 py-4 flex justify-between items-center">
-      <p className="text-white font-semibold text-3xl leading-none 2xl:text-4xl">
-        Mages
-      </p>
-      {character ? (
-        <div className="flex gap-2">
-          <Button
-            className="bg-red-500"
-            icon={<TrashIcon />}
-            onClick={() => {
-              if (confirm("Are you sure you want to delete this character?")) {
-                clearCharacter();
-              }
-            }}
-          >
-            Delete
-          </Button>
-        </div>
-      ) : null}
-    </header>
-  );
-}
-
-function CharacterSheet() {
-  return null;
-}
+const skills = {
+  agile: {
+    name: "Agile",
+    description: "Dodging, leaping, acrobatics.",
+  },
+  brawn: {
+    name: "Brawn",
+    description: "Physical work, powering through, intimidating.",
+  },
+  deceive: {
+    name: "Deceive",
+    description: "Lying, tricking, distracting.",
+  },
+  hunt: {
+    name: "Hunt",
+    description: "Hunting, tracking, monster knowledge.",
+  },
+  mend: {
+    name: "Mend",
+    description: "Warding off death, stabilising wounds, medical training.",
+  },
+  negotiate: {
+    name: "Negotiate",
+    description: "Persuading, diplomacy, compelling.",
+  },
+  stealth: {
+    name: "Stealth",
+    description: "Blending in, keeping quiet, sleight of hand.",
+  },
+  streets: {
+    name: "Streets",
+    description: "Social circles, navigating the city, purchasing power.",
+  },
+  study: {
+    name: "Study",
+    description: "Perception, reading a situation or person, doing research.",
+  },
+  tactics: {
+    name: "Tactics",
+    description: "Strategizing, preparing for battle, split-second decisions.",
+  },
+};
 
 const disciplines = {
   arcaneDuelist: {
@@ -547,6 +505,91 @@ const disciplines = {
   },
 };
 
+const GlobalStateContext = createContext();
+
+function useGlobalState() {
+  return useContext(GlobalStateContext);
+}
+
+function useLocalState(key) {
+  const [state, setState] = useState(() => {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : null;
+  });
+  useEffect(() => {
+    if (state) localStorage.setItem(key, JSON.stringify(state));
+  }, [state, key]);
+
+  return [
+    state,
+    setState,
+    () => {
+      localStorage.removeItem(key);
+      setState(null);
+    },
+  ];
+}
+
+function GlobalStateProvider({ children }) {
+  const [character, setCharacter, clearCharacter] = useLocalState("character");
+  const ctx = { character, setCharacter, clearCharacter };
+
+  return (
+    <GlobalStateContext.Provider value={ctx}>
+      {children}
+    </GlobalStateContext.Provider>
+  );
+}
+
+function Button({ className, icon = null, children, ...props }) {
+  return (
+    <button
+      className={cls(
+        "text-white p-2 rounded flex items-center justify-center gap-2 2xl:text-2xl active:brightness-75  disabled:pointer-events-none",
+        className
+      )}
+      {...props}
+    >
+      {icon}
+      {children ? (
+        <span className={cls("md:inline leading-none", { hidden: icon })}>
+          {children}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function Header() {
+  const { character, clearCharacter } = useGlobalState();
+  return (
+    <header className="bg-gray-700 px-8 py-4 flex justify-between items-center">
+      <p className="text-white font-semibold text-3xl leading-none 2xl:text-4xl">
+        Mages
+      </p>
+      {character ? (
+        <div className="flex gap-2">
+          <Button
+            className="bg-red-500"
+            icon={<TrashIcon />}
+            onClick={() => {
+              if (confirm("Are you sure you want to delete this character?")) {
+                clearCharacter();
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      ) : null}
+    </header>
+  );
+}
+
+function CharacterSheet() {
+  return null;
+}
+
 function Discipline({
   id,
   title,
@@ -729,7 +772,7 @@ function PickSkills({ onDiscipline, onSkills }) {
   const [streets, setStreets] = useState(6);
   const [study, setStudy] = useState(6);
   const [tactics, setTactics] = useState(6);
-  const skills = [
+  const currentSkills = [
     agile,
     brawn,
     deceive,
@@ -741,8 +784,8 @@ function PickSkills({ onDiscipline, onSkills }) {
     study,
     tactics,
   ];
-  const d8s = skills.filter((x) => x === 8).length;
-  const d10s = skills.filter((x) => x === 10).length;
+  const d8s = currentSkills.filter((x) => x === 8).length;
+  const d10s = currentSkills.filter((x) => x === 10).length;
   const canIncreaseToD10 = d10s === 0;
   const canIncreaseToD8 = d8s < 2 || (canIncreaseToD10 && d8s === 2);
   const canIncrease = (skill) => {
@@ -767,71 +810,61 @@ function PickSkills({ onDiscipline, onSkills }) {
       </p>
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         <Skill
-          name="Agile"
-          description="Dodging, leaping, acrobatics."
+          {...skills.agile}
           dice={agile}
           setDice={setAgile}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Brawn"
-          description="Physical work, powering through, intimidating."
+          {...skills.brawn}
           dice={brawn}
           setDice={setBrawn}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Deceive"
-          description="Lying, tricking, distracting."
+          {...skills.deceive}
           dice={deceive}
           setDice={setDeceive}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Hunt"
-          description="Hunting, tracking, monster knowledge."
+          {...skills.hunt}
           dice={hunt}
           setDice={setHunt}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Mend"
-          description="Warding off death, stabilising wounds, medical training."
+          {...skills.mend}
           dice={mend}
           setDice={setMend}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Negotiate"
-          description="Persuading, diplomacy, compelling."
+          {...skills.negotiate}
           dice={negotiate}
           setDice={setNegotiate}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Stealth"
-          description="Blending in, keeping quiet, sleight of hand."
+          {...skills.stealth}
           dice={stealth}
           setDice={setStealth}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Streets"
-          description="Social circles, navigating the city, purchasing power."
+          {...skills.streets}
           dice={streets}
           setDice={setStreets}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Study"
-          description="Perception, reading a situation or person, doing research."
+          {...skills.study}
           dice={study}
           setDice={setStudy}
           canIncrease={canIncrease}
         />
         <Skill
-          name="Tactics"
-          description="Strategizing, preparing for battle, split-second decisions."
+          {...skills.tactics}
           dice={tactics}
           setDice={setTactics}
           canIncrease={canIncrease}
@@ -921,7 +954,7 @@ function FeaturePicker({ discipline, onSkills, onFeatures }) {
         <Button
           className={"bg-teal-500 disabled:bg-gray-600 disabled:opacity-50"}
           disabled={picked.size < 2}
-          onClick={() => onFeatures([...picked])}
+          onClick={() => onFeatures([...picked].map((feature) => feature.name))}
         >
           Final Touches
         </Button>
@@ -965,10 +998,16 @@ function FinalTouches({ onFeatures, onDone }) {
 }
 
 function CharacterCreator() {
+  const { setCharacter } = useGlobalState();
   const pageRef = useRef(null);
   const [discipline, setDiscipline] = useState(null);
   const [skills, setSkills] = useState(null);
   const [features, setFeatures] = useState(null);
+
+  function onDone(name) {
+    setCharacter({ name, discipline, features, skills });
+  }
+
   useEffect(() => {
     if (!pageRef.current) return;
     const scroller = pageRef.current.closest(".scroller");
@@ -981,18 +1020,19 @@ function CharacterCreator() {
       <h1 className="text-center sm:text-left text-3xl 2xl:text-6xl">
         Create your Mage
       </h1>
-      <FinalTouches />
-      {/* {!discipline ? (
+      {!discipline ? (
         <ChooseDiscipline onDiscipline={setDiscipline} />
       ) : !skills ? (
         <PickSkills onDiscipline={setDiscipline} onSkills={setSkills} />
-      ) : (
+      ) : !features ? (
         <FeaturePicker
           discipline={discipline}
           onSkills={setSkills}
           onFeatures={setFeatures}
         />
-      )} */}
+      ) : (
+        <FinalTouches onFeatures={setFeatures} onDone={onDone} />
+      )}
     </div>
   );
 }
