@@ -5,7 +5,15 @@ import {
   TrashIcon,
 } from "@radix-ui/react-icons";
 import cls from "classnames";
-import { createContext, useEffect, useState, useContext, useRef } from "react";
+import {
+  createContext,
+  useEffect,
+  useState,
+  useContext,
+  useRef,
+  useMemo,
+} from "react";
+import { produce as make } from "immer";
 
 const skills = {
   agile: {
@@ -124,6 +132,9 @@ const disciplines = {
             Advantage.
           </span>
         ),
+        fn(d) {
+          d.fields[1].value = <i data-dice="D10" />;
+        },
       },
       {
         name: "Smite",
@@ -172,6 +183,9 @@ const disciplines = {
             Increase Speed to <i data-dice="D8" />.
           </span>
         ),
+        fn(d) {
+          d.fields[1] = <i data-dice="D8" />;
+        },
       },
       {
         name: "Spell Barrage",
@@ -402,6 +416,9 @@ const disciplines = {
       {
         name: "Summoning Circle",
         text: "Increase Horde by +1.",
+        fn(d) {
+          d.fields[2].value = 3;
+        },
       },
       {
         name: "Spirit Shield",
@@ -418,6 +435,9 @@ const disciplines = {
             Increase Speed to <i data-dice="D8" />.
           </span>
         ),
+        fn(d) {
+          d.fields[1].value = <i data-dice="D8" />;
+        },
       },
       {
         name: "Spiritual Flanking",
@@ -500,6 +520,9 @@ const disciplines = {
             Increase Speed to <i data-dice="D10" />.
           </span>
         ),
+        fn(d) {
+          d.fields[1].value = <i data-dice="D10" />;
+        },
       },
     ],
   },
@@ -587,7 +610,152 @@ function Header() {
 }
 
 function CharacterSheet() {
-  return null;
+  const {
+    character: {
+      name,
+      discipline: disciplineID,
+      features: featureNames,
+      skills: skillScores,
+    },
+  } = useGlobalState();
+  const baseDiscipline = disciplines[disciplineID];
+  const features = useMemo(
+    () => baseDiscipline.features.filter((f) => featureNames.includes(f.name)),
+    [baseDiscipline, featureNames]
+  );
+  const discipline = useMemo(() => {
+    return features.reduce((d, feature) => {
+      if (!feature.fn) return d;
+      return make(d, feature.fn);
+    }, baseDiscipline);
+  }, [baseDiscipline, features]);
+  const maxHP = useMemo(
+    () => discipline.fields.find((f) => f.key === "HP").value,
+    [discipline]
+  );
+  const [hp, setHP] = useState(maxHP);
+
+  return (
+    <div className="flex flex-col gap-8 flex-1">
+      <h1 className="text-center sm:text-left text-3xl 2xl:text-6xl flex justify-between gap-4 items-baseline flex-wrap">
+        <span>{name}</span>
+        <small>{discipline.title}</small>
+      </h1>
+      <input
+        type="range"
+        min="0"
+        max={maxHP}
+        value={hp}
+        onChange={(e) => setHP(e.target.valueAsNumber)}
+      />
+      <div
+        className={cls(
+          "grid grid-cols-2 gap-2",
+          discipline.fields.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4"
+        )}
+      >
+        {discipline.fields.map(({ key, value }, idx, { length }) => (
+          <div
+            key={key}
+            className={cls(
+              "flex flex-col items-center gap-2 bg-gray-500 rounded-md py-2 md:flex-row md:justify-center",
+              {
+                "col-span-2 sm:col-span-1": length % 2 && idx === length - 1,
+              }
+            )}
+          >
+            <h2 className="font-semibold 2xl:text-xl">{key}</h2>
+            <p>{key === "HP" ? hp : value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-2">
+        <section className="flex flex-col gap-4">
+          <h2 className="text-center font-bold sm:text-left text-xl 2xl:text-4xl">
+            Actions
+          </h2>
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-2 border-gray-500 rounded-md p-3 border">
+              <h3 className="font-semibold underline underline-offset-2 2xl:text-xl">
+                Ready Action -{" "}
+                <span className="font-bold">
+                  {discipline.actions.ready.name}
+                </span>
+              </h3>
+              {discipline.actions.ready.text ? (
+                <p>{discipline.actions.ready.text}</p>
+              ) : (
+                discipline.actions.ready.node ?? null
+              )}
+            </div>
+            <div className="flex flex-col gap-2 border-gray-500 rounded-md p-3 border">
+              <h3 className="font-semibold underline underline-offset-2 2xl:text-xl">
+                Attack Action -{" "}
+                <span className="font-bold">
+                  {discipline.actions.attack.name}
+                </span>
+              </h3>
+              {discipline.actions.attack.text ? (
+                <p>{discipline.actions.attack.text}</p>
+              ) : (
+                discipline.actions.attack.node ?? null
+              )}
+            </div>
+            <div className="flex flex-col gap-2 border-gray-500 rounded-md p-3 border">
+              <h3 className="font-semibold underline underline-offset-2 2xl:text-xl">
+                Quick Action -{" "}
+                <span className="font-bold">
+                  {discipline.actions.quick.name}
+                </span>
+              </h3>
+              {discipline.actions.quick.text ? (
+                <p>{discipline.actions.quick.text}</p>
+              ) : (
+                discipline.actions.quick.node ?? null
+              )}
+            </div>
+          </div>
+        </section>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <section className="flex flex-col gap-4 lg:col-span-2 border rounded-xl border-gray-600 p-4">
+            <h2 className="text-center font-bold text-xl 2xl:text-4xl">
+              Skills
+            </h2>
+            <div className="grid grid-cols-fill-44 gap-4">
+              {Object.keys(skills).map((skillId) => {
+                return (
+                  <div key={skillId} className="flex flex-col gap-2">
+                    <h3 className="text-lg font-bold 2xl:font-normal 2xl:text-3xl flex justify-between items-baseline">
+                      <span>{skills[skillId].name}</span>
+                      <i data-dice={`D${skillScores[skillId]}`} />
+                    </h3>
+                    <p>{skills[skillId].description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+          <section className="flex flex-col gap-4 border rounded-xl border-gray-600 p-4">
+            <h2 className="text-center font-bold text-xl 2xl:text-4xl">
+              Features
+            </h2>
+            <div className="flex flex-col gap-4">
+              {features.map((feature) => {
+                return (
+                  <div key={feature.name} className="flex flex-col gap-2">
+                    <h3 className="text-lg font-bold 2xl:font-normal 2xl:text-3xl flex justify-between items-baseline">
+                      {feature.name}
+                    </h3>
+                    <p>{feature.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Discipline({
