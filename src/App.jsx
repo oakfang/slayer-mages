@@ -257,7 +257,7 @@ const disciplines = {
   },
   fatebinder: {
     id: "fatebinder",
-    title: "Fatebinedr",
+    title: "Fatebinder",
     description:
       "You’ve always known how this fight would go, luck is for the blind.",
     fields: [
