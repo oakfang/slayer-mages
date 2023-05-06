@@ -558,8 +558,27 @@ function useLocalState(key) {
 }
 
 function GlobalStateProvider({ children }) {
-  const [character, setCharacter, clearCharacter] = useLocalState("character");
-  const ctx = { character, setCharacter, clearCharacter };
+  const characterId = useMemo(() => {
+    const url = new URL(window.location);
+    const id = url.searchParams.get("id");
+    return id;
+  }, []);
+  const currentCharacterId = useMemo(
+    () => characterId ?? crypto.randomUUID(),
+    [characterId]
+  );
+  const [character, setCharacter, clearCharacter] = useLocalState(
+    "mage_" + currentCharacterId
+  );
+  const ctx = {
+    characterId: currentCharacterId,
+    character,
+    setCharacter,
+    clearCharacter,
+  };
+  if (characterId && !character) {
+    window.location.search = "";
+  }
 
   return (
     <GlobalStateContext.Provider value={ctx}>
@@ -591,9 +610,12 @@ function Header() {
   const { character, clearCharacter } = useGlobalState();
   return (
     <header className="bg-gray-700 px-8 py-4 flex justify-between items-center">
-      <p className="text-white font-semibold text-3xl leading-none 2xl:text-4xl">
+      <a
+        href="/"
+        className="text-white font-semibold text-3xl leading-none 2xl:text-4xl"
+      >
         Mages
-      </p>
+      </a>
       {character ? (
         <div className="flex gap-2">
           <Button
@@ -1102,10 +1124,13 @@ function FeaturePicker({ discipline, onSkills, onFeatures }) {
               <h3 className="text-lg font-bold 2xl:text-3xl">{feature.name}</h3>
               <p className="2xl:text-xl flex-1">{feature.text}</p>
               <Button
-                className={cls(" border-teal-500 border disabled:bg-gray-600 disabled:border-gray-600 disabled:opacity-50", {
-                  "bg-teal-500": !picked.has(feature),
-                  "text-teal-500": picked.has(feature),
-                })}
+                className={cls(
+                  " border-teal-500 border disabled:bg-gray-600 disabled:border-gray-600 disabled:opacity-50",
+                  {
+                    "bg-teal-500": !picked.has(feature),
+                    "text-teal-500": picked.has(feature),
+                  }
+                )}
                 disabled={!picked.has(feature) && picked.size === 2}
                 onClick={() =>
                   setPicked((current) => {
@@ -1179,7 +1204,7 @@ function FinalTouches({ onFeatures, onDone }) {
 }
 
 function CharacterCreator() {
-  const { setCharacter } = useGlobalState();
+  const { setCharacter, characterId } = useGlobalState();
   const pageRef = useRef(null);
   const [discipline, setDiscipline] = useState(null);
   const [skills, setSkills] = useState(null);
@@ -1187,6 +1212,7 @@ function CharacterCreator() {
 
   function onDone(name) {
     setCharacter({ name, discipline, features, skills });
+    window.location.search = `?id=${characterId}`;
   }
 
   useEffect(() => {
@@ -1218,12 +1244,61 @@ function CharacterCreator() {
   );
 }
 
+function CharacterList() {
+  const [create, setCreate] = useState(false);
+  const characters = useMemo(() => {
+    const keys = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key?.startsWith("mage_")) {
+        const { name } = JSON.parse(window.localStorage.getItem(key));
+        keys.push({ id: key.substring(5), name });
+      }
+    }
+    return keys;
+  }, []);
+
+  if (create) {
+    return <CharacterCreator />;
+  }
+
+  return (
+    <div className="flex flex-col flex-1 items-center gap-8 pt-10">
+      <Button
+        className="bg-teal-600 text-3xl p-6 rounded-2xl font-bold"
+        onClick={() => setCreate(true)}
+      >
+        Create Your Mage
+      </Button>
+      {characters.length ? (
+        <section className="container flex flex-col gap-6">
+          <h1 className="text-2xl font-bold underline underline-offset-2 text-center">
+            Your Mages
+          </h1>
+          <ul className="rounded bg-gray-800 py-2 flex flex-col text-center">
+            {characters.map(({ id, name }) => (
+              <li key={id} className="px-4 py-3 even:bg-gray-700">
+                <a
+                  className="underline text-xl leading-none"
+                  href={`/?id=${id}`}
+                >
+                  {name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
 function AppContent() {
   const { character } = useGlobalState();
 
   if (character) return <CharacterSheet />;
 
-  return <CharacterCreator />;
+  return <CharacterList />;
 }
 
 export default function App() {
