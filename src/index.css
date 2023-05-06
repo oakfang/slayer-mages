@@ -8,6 +8,7 @@ body {
   width: 100dvw;
   background-color: var(--color-gray-900);
   color: var(--color-white);
+  overscroll-behavior-x: none;
 }
 
 svg {

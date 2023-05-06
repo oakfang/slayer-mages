@@ -329,15 +329,19 @@ const disciplines = {
         ),
       },
       {
-        name: "Critical Fate",
-        text: `You may add or subtract a Vision Pool dice for a roll, instead of replacing a die.`,
+        name: "Ascending Fate",
+        text: `You may add a Vision Pool dice to a roll, instead of replacing a die.`,
+      },
+      {
+        name: "Sudden Doom",
+        text: `You may subtract a Vision Pool dice from a roll, instead of replacing a die.`,
       },
       {
         name: "Visions of Victory",
         text: (
           <span>
             When a monster is killed, add <i data-dice="D6" /> to your Vision
-            Pool.
+            Pool. Your Vision Pool can't increased beyond its initial size.
           </span>
         ),
       },
@@ -390,9 +394,9 @@ const disciplines = {
         node: (
           <>
             <p>
-              Choose two of your Spirits and roll your Spirit Dice for each to
-              activate their abilities. Each type of Spirit has a different
-              ability:
+              Choose <span className="font-semibold">two</span> of your Spirits
+              and roll your Spirit Dice for each to activate their abilities.
+              Each type of Spirit has a different ability:
             </p>
             <ul>
               <li>
@@ -767,13 +771,15 @@ function Discipline({
   features,
   onPick,
   chosen,
+  className,
 }) {
   const isChosen = chosen === id;
   return (
     <li
       className={cls(
-        "list-none p-4 bg-gray-800 rounded-sm flex flex-col gap-3 shadow-teal-600",
-        { "shadow-inner": isChosen }
+        "list-none p-4 bg-gray-800 rounded-sm flex flex-col gap-3 shadow-teal-600 shrink-0 max-w-full snap-center",
+        { "shadow-inner": isChosen },
+        className
       )}
     >
       <header className="flex justify-between items-center">
@@ -867,29 +873,36 @@ function ChooseDiscipline({ onDiscipline }) {
       <h2 className="text-center sm:text-left text-xl 2xl:text-4xl">
         Choose Mage Discipline
       </h2>
-      <ul className="flex flex-col gap-4">
-        <Discipline
-          onPick={setChosen}
-          chosen={chosen}
-          {...disciplines.arcaneDuelist}
-        />
-        <Discipline
-          onPick={setChosen}
-          chosen={chosen}
-          {...disciplines.spellslinger}
-        />
-        <Discipline
-          onPick={setChosen}
-          chosen={chosen}
-          {...disciplines.fatebinder}
-        />
-        <Discipline
-          onPick={setChosen}
-          chosen={chosen}
-          {...disciplines.summoner}
-        />
-        <Discipline onPick={setChosen} chosen={chosen} {...disciplines.witch} />
-      </ul>
+      <div className="w-full overflow-x-auto scrollbar-thin snap-x snap-mandatory">
+        <ul className="flex gap-4 xl:grid xl:grid-cols-2">
+          <Discipline
+            onPick={setChosen}
+            chosen={chosen}
+            {...disciplines.arcaneDuelist}
+          />
+          <Discipline
+            onPick={setChosen}
+            chosen={chosen}
+            {...disciplines.summoner}
+          />
+          <Discipline
+            onPick={setChosen}
+            chosen={chosen}
+            {...disciplines.fatebinder}
+          />
+          <Discipline
+            onPick={setChosen}
+            chosen={chosen}
+            {...disciplines.witch}
+          />
+          <Discipline
+            className={"col-span-full"}
+            onPick={setChosen}
+            chosen={chosen}
+            {...disciplines.spellslinger}
+          />
+        </ul>
+      </div>
       <div className="flex py-2 md:justify-end">
         <Button
           className={
@@ -1077,7 +1090,7 @@ function FeaturePicker({ discipline, onSkills, onFeatures }) {
   return (
     <div className="flex flex-col flex-1 gap-6">
       <h2 className="text-center sm:text-left text-xl 2xl:text-4xl">
-        Pick your {dsl.title} Featuers
+        Pick 2 your {dsl.title} Featuers
       </h2>
       <div className="grid grid-cols-fill-64 gap-4">
         {dsl.features.map((feature) => {
@@ -1089,9 +1102,9 @@ function FeaturePicker({ discipline, onSkills, onFeatures }) {
               <h3 className="text-lg font-bold 2xl:text-3xl">{feature.name}</h3>
               <p className="2xl:text-xl flex-1">{feature.text}</p>
               <Button
-                className={cls(" disabled:bg-gray-600 disabled:opacity-50", {
+                className={cls(" border-teal-500 border disabled:bg-gray-600 disabled:border-gray-600 disabled:opacity-50", {
                   "bg-teal-500": !picked.has(feature),
-                  "border-teal-500 border text-teal-500": picked.has(feature),
+                  "text-teal-500": picked.has(feature),
                 })}
                 disabled={!picked.has(feature) && picked.size === 2}
                 onClick={() =>

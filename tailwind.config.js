@@ -17,6 +17,7 @@ export default {
     },
   },
   plugins: [
+    require('tailwind-scrollbar')({ nocompatible: true }),
     function ({ addBase, theme }) {
       function extractColorVars(colorObj, colorGroup = "") {
         return Object.keys(colorObj).reduce((vars, colorKey) => {
